@@ -1,9 +1,5 @@
 import numpy as np
-import torch
-  
-import time
-from IPython import embed
-from scipy.io import savemat 
+
 
 def read_obj(filepath):
     vertices = []

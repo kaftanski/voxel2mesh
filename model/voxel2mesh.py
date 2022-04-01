@@ -1,32 +1,19 @@
+from itertools import chain
+
+import torch
 import torch.nn as nn
-import torch 
-import torch.nn.functional as F 
-
-from pytorch3d.structures import Meshes 
+from pytorch3d.loss import (chamfer_distance, mesh_edge_loss, mesh_laplacian_smoothing, mesh_normal_consistency)
 from pytorch3d.ops import sample_points_from_meshes
-from pytorch3d.loss import (chamfer_distance,  mesh_edge_loss, mesh_laplacian_smoothing, mesh_normal_consistency)
+from pytorch3d.structures import Meshes
 
-import numpy as np
-from itertools import product, combinations, chain
-from scipy.spatial import ConvexHull
-
-from IPython import embed 
-import time 
-
-from utils.utils_common import crop_and_merge  
-from utils.utils_voxel2mesh.graph_conv import adjacency_matrix, Features2Features, Feature2VertexLayer 
-from utils.utils_voxel2mesh.feature_sampling import LearntNeighbourhoodSampling 
-from utils.utils_voxel2mesh.file_handle import read_obj 
-
-
+from utils.utils_common import crop_and_merge
+from utils.utils_unet import UNetLayer
+from utils.utils_voxel2mesh.feature_sampling import LearntNeighbourhoodSampling
+from utils.utils_voxel2mesh.file_handle import read_obj
+from utils.utils_voxel2mesh.graph_conv import adjacency_matrix, Features2Features, Feature2VertexLayer
 from utils.utils_voxel2mesh.unpooling import uniform_unpool, adoptive_unpool
 
-from utils.utils_unet import UNetLayer
 
-
-  
- 
- 
 class Voxel2Mesh(nn.Module):
     """ Voxel2Mesh  """
  

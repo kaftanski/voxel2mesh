@@ -1,5 +1,4 @@
 import torch.nn as nn  
-from IPython import embed 
 
 class UNetLayer(nn.Module):
     """ U-Net Layer """

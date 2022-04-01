@@ -1,9 +1,7 @@
 import torch.nn.functional as F
 import torch
 from utils import affine_3d_grid_generator
-from IPython import embed 
-import time
- 
+
 
 def stn_all_ratations(params, inverse=False):
     theta, theta_x, theta_y, theta_z = stn_all_ratations_with_all_theta(params, inverse)

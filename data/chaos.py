@@ -1,25 +1,19 @@
-import numpy as np
-from skimage import io
-from data.data import get_item, sample_outer_surface_in_voxel, sample_to_sample_plus
-
-import sys
-from utils.metrics import jaccard_index, chamfer_weighted_symmetric, chamfer_directed
-from utils.utils_common import crop, DataModes, crop_indices, blend
-# from utils.utils_mesh import sample_outer_surface, get_extremity_landmarks, voxel2mesh, clean_border_pixels, sample_outer_surface_in_voxel, normalize_vertices 
-
-# from utils import stns
-from torch.utils.data import Dataset
-import torch
-from sklearn.decomposition import PCA
-import pickle
-import torch.nn.functional as F
-from numpy.linalg import norm
-import itertools as itr
-import torch
-from scipy import ndimage
 import os
-from IPython import embed
+# from utils import stns
+import pickle
+
+import numpy as np
 import pydicom
+import torch
+import torch.nn.functional as F
+from skimage import io
+
+from data.data import get_item, sample_to_sample_plus
+from utils.metrics import jaccard_index, chamfer_weighted_symmetric
+from utils.utils_common import crop, DataModes
+
+
+# from utils.utils_mesh import sample_outer_surface, get_extremity_landmarks, voxel2mesh, clean_border_pixels, sample_outer_surface_in_voxel, normalize_vertices
 
 class Sample:
     def __init__(self, x, y, atlas=None):

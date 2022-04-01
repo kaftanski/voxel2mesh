@@ -1,6 +1,6 @@
  
 import os
-GPU_index = "0"
+GPU_index = "3"
 os.environ["CUDA_VISIBLE_DEVICES"] = GPU_index
 
   
@@ -17,7 +17,6 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from utils.utils_common import DataModes
 import wandb
-from IPython import embed 
 from utils.utils_common import mkdir
 
 from config import load_config
@@ -39,7 +38,7 @@ def init(cfg):
 
     if not os.path.isdir(trial_save_path):
         mkdir(trial_save_path) 
-        copytree(os.getcwd(), trial_save_path + '/source_code', ignore=ignore_patterns('*.git','*.txt','*.tif', '*.pkl', '*.off', '*.so', '*.json','*.jsonl','*.log','*.patch','*.yaml','wandb','run-*'))
+        copytree(os.getcwd(), trial_save_path + '/source_code', ignore=ignore_patterns('*.git','*.txt','*.tif', '*.pkl', '*.off', '*.so', '*.json','*.jsonl','*.log','*.patch','*.yaml','wandb','run-*','resultsExperiment_*'))
 
   
     seed = trial_id
@@ -48,12 +47,13 @@ def init(cfg):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.enabled = True  # speeds up the computation 
 
+    # logging.basicConfig(filename=os.path.join(trial_save_path, 'train.log'), level=logging.DEBUG)
+
     return trial_save_path, trial_id
 
+
 def main():
- 
-    
-    exp_id = 3
+    exp_id = 0
 
     # Initialize
     cfg = load_config(exp_id)
@@ -65,7 +65,7 @@ def main():
     classifier = network(cfg)
     classifier.cuda()
  
-
+    os.environ["WANDB_MODE"] = "offline"
     wandb.init(name='Experiment_{}/trial_{}'.format(cfg.experiment_idx, trial_id), project="vm-net", dir=trial_path)
  
     print("Initialize optimizer")
@@ -73,14 +73,14 @@ def main():
   
     print("Load pre-processed data") 
     data_obj = cfg.data_obj 
-    data = data_obj.quick_load_data(cfg, trial_id)
+    data = data_obj.quick_load_data(cfg, trial_id-1)
     
     loader = DataLoader(data[DataModes.TRAINING], batch_size=classifier.config.batch_size, shuffle=True)
   
     print("Trainset length: {}".format(loader.__len__()))
 
     print("Initialize evaluator")
-    evaluator = Evaluator(classifier, optimizer, data, trial_path, cfg, data_obj) 
+    evaluator = Evaluator(classifier, optimizer, data, trial_path, cfg, data_obj, data_ids=cfg.split[trial_id - 1])
 
     print("Initialize trainer")
     trainer = Trainer(classifier, loader, optimizer, cfg.numb_of_itrs, cfg.eval_every, trial_path, evaluator)
@@ -95,8 +95,7 @@ def main():
     else:
         epoch = 0
 
-
-    trainer.train(start_iteration=epoch) 
+    trainer.train(start_iteration=epoch)
 
     # To evaluate a pretrained model, uncomment line below and comment the line above
     # evaluator.evaluate(epoch)

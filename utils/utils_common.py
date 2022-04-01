@@ -1,15 +1,12 @@
 
 import os
-import logging
-
-import numpy as np
-#import cv2
-import torch
-from torch.autograd import Variable
-import torch.nn.functional as F
 from functools import reduce
+
 import cv2
-import sys
+import numpy as np
+# import cv2
+import torch
+import torch.nn.functional as F
 
 volume_suffix = '' 
 

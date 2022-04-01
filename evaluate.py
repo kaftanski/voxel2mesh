@@ -1,16 +1,15 @@
-from utils.utils_common import DataModes, mkdir, blend, crop_indices, blend_cpu, append_line, write_lines 
-from utils.utils_voxel2mesh.file_handle import save_to_obj  
-from torch.utils.data import DataLoader
 import numpy as np
 import torch
-from skimage import io 
-import itertools
 import torch.nn.functional as F
-import os
-from scipy import ndimage
-from IPython import embed
 import wandb
+from skimage import io
+from torch.utils.data import DataLoader
+
 from utils.rasterize.rasterize import Rasterize
+from utils.utils_common import DataModes, mkdir, blend_cpu, append_line, write_lines
+from utils.utils_voxel2mesh.file_handle import save_to_obj
+
+
 # from utils import stns
 
 
@@ -36,16 +35,17 @@ def write_to_wandb(writer, epoch, split, performences, num_classes):
 
 
 class Evaluator(object):
-    def __init__(self, net, optimizer, data, save_path, config, support):
+    def __init__(self, net, optimizer, data, save_path, config, support, data_ids):
         self.data = data
         self.net = net
         self.current_best = None
-        self.save_path = save_path + '/best_performance3' 
+        self.save_path = save_path + '/best_performance'
         self.latest = save_path + '/latest' 
         self.optimizer = optimizer
         self.config = config
         self.support = support
-        self.count = 0 
+        self.count = 0
+        self.data_ids = data_ids
 
 
     def save_model(self, epoch):
@@ -57,7 +57,7 @@ class Evaluator(object):
         }, self.save_path + '/model.pth')
 
 
-    def evaluate(self, epoch, writer=None, backup_writer=None):
+    def evaluate(self, epoch, writer=None, tensorboard_writer=None):
         # self.net = self.net.eval()
         performences = {}
         predictions = {}
@@ -78,6 +78,10 @@ class Evaluator(object):
             self.save_model(epoch)
             self.save_results(predictions[DataModes.TESTING], epoch, performences[DataModes.TESTING], self.save_path, '/testing_')
             self.current_best = performences
+
+            if tensorboard_writer is not None:
+                for key, value in performences[DataModes.TESTING].items():
+                    tensorboard_writer.add_scalars('test/' + key, {f'Part {i+1}' for i, v in enumerate(value)}, global_step=epoch)
   
 
     def predict(self, data, config):
@@ -160,7 +164,9 @@ class Evaluator(object):
         y_hats_voxels = []
         y_hats_points = []
         y_hats_meshes = []
- 
+
+        split_mode = 'train' if mode == DataModes.TRAINING else 'val'
+
         for i, data in enumerate(predictions):
             x, y, y_hat = data
 
@@ -168,14 +174,14 @@ class Evaluator(object):
 
             if y_hat.points is not None:
                 for p, (true_points, pred_points) in enumerate(zip(y.points, y_hat.points)):
-                    save_to_obj(save_path + '/points/' + mode + 'true_' + str(i) + '_part_' + str(p) + '.obj', true_points, [])
+                    save_to_obj(save_path + '/points/' + mode + 'true_' + self.data_ids[split_mode][i] + '_part_' + str(p) + '.obj', true_points, [])
                     if pred_points.shape[1] > 0:
-                        save_to_obj(save_path + '/points/' + mode + 'pred_' + str(i) + '_part_' + str(p) + '.obj', pred_points, [])
+                        save_to_obj(save_path + '/points/' + mode + 'pred_' + self.data_ids[split_mode][i] + '_part_' + str(p) + '.obj', pred_points, [])
 
             if y_hat.mesh is not None:
                 for p, (true_mesh, pred_mesh) in enumerate(zip(y.mesh, y_hat.mesh)):
-                    save_to_obj(save_path + '/mesh/' + mode + 'true_' + str(i) + '_part_' + str(p) + '.obj', true_mesh['vertices'], true_mesh['faces'], true_mesh['normals'])
-                    save_to_obj(save_path + '/mesh/' + mode + 'pred_' + str(i) + '_part_' + str(p) + '.obj', pred_mesh['vertices'], pred_mesh['faces'], pred_mesh['normals'])
+                    save_to_obj(save_path + '/mesh/' + mode + 'true_' + self.data_ids[split_mode][i] + '_part_' + str(p) + '.obj', true_mesh['vertices'], true_mesh['faces'], true_mesh['normals'])
+                    save_to_obj(save_path + '/mesh/' + mode + 'pred_' + self.data_ids[split_mode][i] + '_part_' + str(p) + '.obj', pred_mesh['vertices'], pred_mesh['faces'], pred_mesh['normals'])
 
  
             if y_hat.voxel is not None:

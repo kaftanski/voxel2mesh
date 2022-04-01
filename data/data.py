@@ -1,14 +1,13 @@
-from utils.utils_common import DataModes, crop
-from utils import stns
-from skimage import measure
- 
-import torch
-import torch.nn.functional as F
 # from utils import stns
 # from utils.utils_mesh import voxel2mesh, clean_border_pixels
-import numpy as np 
-from IPython import embed 
- 
+import numpy as np
+import torch
+import torch.nn.functional as F
+from skimage import measure
+
+from utils import stns
+from utils.utils_common import DataModes, crop
+
 
 class Sample:
     def __init__(self, x, y, atlas):
@@ -125,7 +124,7 @@ def get_item(item, mode, config):
                    'vertices_mc': vertices_mc_all,
                    'faces_mc': faces_mc_all,
                    'surface_points': surface_points_normalized_all, 
-                   'unpool':[0, 1, 1, 1, 1]}
+                   'unpool':[0, 1, 0, 1, 1]}
 
 def sample_outer_surface_in_voxel(volume): 
     # inner surface
@@ -159,14 +158,14 @@ def sample_to_sample_plus(samples, cfg, datamode):
         x = sample.x
         y = sample.y 
 
-        y = (y>0).long()
+        # y = (y>0).long()  # TODO: this just makes one label (using this only for computing y_outer, which we later won't need...)
 
         center = tuple([d // 2 for d in x.shape]) 
         x = crop(x, cfg.patch_shape, center) 
         y = crop(y, cfg.patch_shape, center)   
 
         shape = torch.tensor(y.shape)[None].float()
-        y_outer = sample_outer_surface_in_voxel(y) 
+        y_outer = sample_outer_surface_in_voxel((y>0).long()) #y)
 
         new_samples += [SamplePlus(x.cpu(), y.cpu(), y_outer.cpu(), shape=shape)]
 
@@ -206,4 +205,3 @@ def clean_border_pixels(image, gap):
 
 
 
- 

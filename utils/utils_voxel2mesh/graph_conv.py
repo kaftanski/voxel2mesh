@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from torch.nn.parameter import Parameter
 from torch.nn import init
 import math
-from IPython import embed
 from itertools import product, combinations
 
 def adjacency_matrix(vertices, faces):
